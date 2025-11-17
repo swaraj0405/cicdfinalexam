@@ -11,10 +11,10 @@ Write-Host "Starting deployment and test..." -ForegroundColor Cyan
 
 Push-Location (Split-Path -Path $MyInvocation.MyCommand.Definition -Parent)
 
-function Wait-ForPort($host, $port, $timeoutSec = 120) {
+function Wait-ForPort($hostname, $port, $timeoutSec = 120) {
     $start = Get-Date
     while ((Get-Date) - $start -lt ([TimeSpan]::FromSeconds($timeoutSec))) {
-        $res = Test-NetConnection -ComputerName $host -Port $port -WarningAction SilentlyContinue
+        $res = Test-NetConnection -ComputerName $hostname -Port $port -WarningAction SilentlyContinue
         if ($res.TcpTestSucceeded) { return $true }
         Start-Sleep -Seconds 2
     }
@@ -36,7 +36,7 @@ Write-Host " Done" -ForegroundColor Green
 
 Start-Sleep -Seconds 5
 
-function Post-Json($url, $body) {
+function Invoke-JsonPost($url, $body) {
     try {
         $json = $body | ConvertTo-Json -Depth 5
         $resp = Invoke-RestMethod -Uri $url -Method Post -Body $json -ContentType 'application/json' -TimeoutSec 30
@@ -50,7 +50,7 @@ $signupUrl = 'http://localhost:8081/auth/signup'
 $loginUrl = 'http://localhost:8081/auth/login'
 
 Write-Host "Posting sample signup to $signupUrl" -ForegroundColor Cyan
-$signup = Post-Json $signupUrl @{ username = 'demo'; email = 'demo@example.com'; password = 'pass' }
+$signup = Invoke-JsonPost $signupUrl @{ username = 'demo'; email = 'demo@example.com'; password = 'pass' }
 if ($signup.success) { Write-Host "Signup response: $($signup.body)" -ForegroundColor Green } else { Write-Warning "Signup failed: $($signup.error)" }
 
 Write-Host "Restarting containers to test persistence..." -ForegroundColor Cyan
@@ -59,7 +59,7 @@ docker restart travel-backend, travel-db | ForEach-Object { Write-Host "Restarte
 Start-Sleep -Seconds 8
 
 Write-Host "Attempting login to verify persistence" -ForegroundColor Cyan
-$login = Post-Json $loginUrl @{ username = 'demo'; password = 'pass' }
+$login = Invoke-JsonPost $loginUrl @{ username = 'demo'; password = 'pass' }
 if ($login.success) { Write-Host "Login response: $($login.body)" -ForegroundColor Green } else { Write-Warning "Login failed: $($login.error)" }
 
 Write-Host "Deployment and basic persistence test complete." -ForegroundColor Cyan
