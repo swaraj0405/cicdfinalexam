@@ -1,0 +1,35 @@
+version: '3.8'
+services:
+  db:
+    image: mysql:8.0
+    container_name: travel-db
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: travelmanagement
+    volumes:
+      - travel_db_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+
+  backend:
+    build: .
+    image: travel-backend:latest
+    container_name: travel-backend
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/travelmanagement
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      SERVER_PORT: 8081
+    ports:
+      - "8081:8081"
+    depends_on:
+      - db
+    networks:
+      - travelnet
+
+volumes:
+  travel_db_data:
+
+networks:
+  travelnet:
+    driver: bridge
